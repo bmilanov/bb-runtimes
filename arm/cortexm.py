@@ -8,18 +8,30 @@ class CortexMArch(BSP):
     def name(self):
         return "cortex-m"
 
-    def __init__(self):
+    def __init__(self, cortex='cortex-m0'):
         super(CortexMArch, self).__init__()
-        self.add_sources('arch', [
-            'src/s-macres__cortexm3.adb',
-            'arm/src/breakpoint_handler-cortexm.S'])
-        self.add_sources('gnarl', [
-            'src/s-bbcppr__armv7m.adb',
-            'src/s-bbbosu__armv7m.adb'])
-        self.add_sources('gnarl', [
-            'src/s-bbcppr.ads',
-            'src/s-bbinte.adb',
-            'src/s-bbsumu.adb'])
+        if cortex == 'cortex-m0':
+            self.add_sources('arch', [
+                'src/s-macres__cortexm0.adb',
+                'arm/src/breakpoint_handler-cortexm__f0.S'])
+            self.add_sources('gnarl', [
+                'src/s-bbcppr__armv6m.adb',
+                'src/s-bbbosu__armv6m.adb'])
+            self.add_sources('gnarl', [
+                'src/s-bbcppr.ads',
+                'src/s-bbinte.adb',
+                'src/s-bbsumu.adb'])
+        else:
+            self.add_sources('arch', [
+                'src/s-macres__cortexm3.adb',
+                'arm/src/breakpoint_handler-cortexm.S'])
+            self.add_sources('gnarl', [
+                'src/s-bbcppr__armv7m.adb',
+                'src/s-bbbosu__armv7m.adb'])
+            self.add_sources('gnarl', [
+                'src/s-bbcppr.ads',
+                'src/s-bbinte.adb',
+                'src/s-bbsumu.adb'])
 
 
 class CortexMTarget(Target):
@@ -53,13 +65,21 @@ class CortexMTarget(Target):
 
     @property
     def sfp_system_ads(self):
-        return 'system-xi-cortexm4-sfp.ads'
+        return self._sfp_system_ads
+
+    @sfp_system_ads.setter
+    def sfp_system_ads(self, value):
+        self._sfp_system_ads = value
 
     @property
     def full_system_ads(self):
         return 'system-xi-cortexm4-full.ads'
 
-    def __init__(self):
+    def __init__(self, cortex='cortex-m0'):
+        if cortex == 'cortex-m0':
+            self._sfp_system_ads = 'system-xi-cortexm0-sfp.ads'
+        else:
+            self._sfp_system_ads = 'system-xi-cortexm4-sfp.ads'
         super(CortexMTarget, self).__init__(
             mem_routines=True,
             small_mem=True)
@@ -258,6 +278,37 @@ class SmartFusion2(CortexMTarget):
             'arm/smartfusion2/svd/a-intnam.ads',
             'src/s-bbpara__smartfusion2.ads'])
 
+class Stm32F0CommonBSP(BSP):
+    """Holds sources common to all stm32f0 boards"""
+    @property
+    def name(self):
+        return 'stm32'
+
+    @property
+    def parent(self):
+        return CortexMArch
+
+    @property
+    def loaders(self):
+        return ('ROM', 'RAM', 'USER')
+
+    @property
+    def readme_file(self):
+        return 'arm/stm32/README'
+
+    def __init__(self):
+        super(Stm32F0CommonBSP, self).__init__()
+
+        self.add_linker_script('arm/stm32/common-RAM-cortex-m0.ld', loader='RAM')
+        self.add_linker_script('arm/stm32/common-ROM-cortex-m0.ld', loader='ROM')
+
+        self.add_sources('crt0', [
+            'src/s-bbpara__stm32f0.ads',
+            'src/s-stm32__f0.ads',
+            'arm/stm32/start-rom__f0.S',
+            'arm/stm32/start-ram__f0.S',
+            'arm/stm32/setup_pll__f0.adb',
+            'arm/stm32/setup_pll__f0.ads'])
 
 class Stm32CommonBSP(BSP):
     """Holds sources common to all stm32 boards"""
@@ -301,7 +352,10 @@ class Stm32(CortexMTarget):
 
     @property
     def parent(self):
-        return Stm32CommonBSP
+        if (self.cortex == "cortex-m0"):
+            return Stm32F0CommonBSP
+        else:
+            return Stm32CommonBSP
 
     @property
     def use_semihosting_io(self):
@@ -320,6 +374,8 @@ class Stm32(CortexMTarget):
             return 'cortex-m4'
         elif self.mcu.startswith('stm32f7'):
             return 'cortex-m7'
+        elif self.mcu.startswith('stm32f0'):
+            return 'cortex-m0'
         else:
             assert False, "Unexpected MCU %s" % self.mcu
 
@@ -327,6 +383,8 @@ class Stm32(CortexMTarget):
     def fpu(self):
         if self.cortex == 'cortex-m4':
             return 'fpv4-sp-d16'
+        if self.cortex == "cortex-m0":
+            return 'none'
         elif not self.has_double_precision_fpu:
             return 'fpv5-sp-d16'
         else:
@@ -335,14 +393,21 @@ class Stm32(CortexMTarget):
     @property
     def compiler_switches(self):
         # The required compiler switches
-        return ('-mlittle-endian', '-mhard-float',
-                '-mcpu=%s' % self.cortex,
-                '-mfpu=%s' % self.fpu,
-                '-mthumb')
+        if self.fpu == "none":
+            return ('-mlittle-endian', '-mfloat-abi=soft',
+                    '-mcpu=%s' % self.cortex,
+                    '-mthumb')
+        else:
+            return ('-mlittle-endian', '-mhard-float',
+                    '-mcpu=%s' % self.cortex,
+                    '-mfpu=%s' % self.fpu,
+                    '-mthumb')
 
     def __init__(self, board):
         self.board = board
-        if self.board == 'stm32f4':
+        if self.board == 'nucleo-stm32f030r8':
+            self.mcu = 'stm32f030'
+        elif self.board == 'stm32f4':
             self.mcu = 'stm32f40x'
         elif self.board == 'stm32f429disco':
             self.mcu = 'stm32f429x'
@@ -365,7 +430,6 @@ class Stm32(CortexMTarget):
         self.add_sources('crt0', [
             'arm/stm32/%s/s-bbbopa.ads' % self.mcu,
             'arm/stm32/%s/s-bbmcpa.ads' % self.mcu,
-            'arm/stm32/%s/s-bbmcpa.adb' % self.mcu,
             'arm/stm32/%s/svd/i-stm32.ads' % self.mcu,
             'arm/stm32/%s/svd/i-stm32-flash.ads' % self.mcu,
             'arm/stm32/%s/svd/i-stm32-gpio.ads' % self.mcu,
@@ -374,6 +438,12 @@ class Stm32(CortexMTarget):
             'arm/stm32/%s/svd/i-stm32-syscfg.ads' % self.mcu,
             'arm/stm32/%s/svd/i-stm32-usart.ads' % self.mcu])
 
+        if self.board != 'nucleo-stm32f030r8':
+            self.add_sources('crt0', ['arm/stm32/%s/s-bbmcpa.adb' % self.mcu])
+
+        if self.board == 'nucleo-stm32f030r8':
+            self.add_sources('crt0', [
+                'src/s-stm32__f030.adb'])
         if self.board == 'stm32f4':
             self.add_sources('crt0', [
                 'src/s-stm32__f40x.adb'])
