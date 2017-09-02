@@ -405,7 +405,7 @@ class Stm32(CortexMTarget):
 
     def __init__(self, board):
         self.board = board
-        if self.board == 'nucleo-stm32f030r8':
+        if self.board == 'nucleo-f030r8':
             self.mcu = 'stm32f030'
         elif self.board == 'stm32f4':
             self.mcu = 'stm32f40x'
@@ -438,10 +438,10 @@ class Stm32(CortexMTarget):
             'arm/stm32/%s/svd/i-stm32-syscfg.ads' % self.mcu,
             'arm/stm32/%s/svd/i-stm32-usart.ads' % self.mcu])
 
-        if self.board != 'nucleo-stm32f030r8':
+        if self.board != 'nucleo-f030r8':
             self.add_sources('crt0', ['arm/stm32/%s/s-bbmcpa.adb' % self.mcu])
 
-        if self.board == 'nucleo-stm32f030r8':
+        if self.board == 'nucleo-f030r8':
             self.add_sources('crt0', [
                 'src/s-stm32__f030.adb'])
         if self.board == 'stm32f4':

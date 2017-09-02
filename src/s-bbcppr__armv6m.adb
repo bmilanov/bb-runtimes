@@ -270,7 +270,7 @@ package body System.BB.CPU_Primitives is
       Trap_Handlers (Interrupt_Request_Vector)(Interrupt_Request_Vector);
 
       --  The handler has changed the current priority (BASEPRI), although
-      --  being useless on ARMv7m. We need to revert it.
+      --  being useless on ARMv6m. We need to revert it.
 
       --  The interrupt handler may have scheduled a new task, so we need to
       --  check whether a context switch is needed.

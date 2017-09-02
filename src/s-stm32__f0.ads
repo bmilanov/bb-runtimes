@@ -25,7 +25,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This file provides register definitions for the STM32F030 (ARM Cortex M0+)
+--  This file provides register definitions for the STM32F030 (ARM Cortex-M0)
 --  microcontrollers from ST Microelectronics.
 
 with Interfaces.STM32;

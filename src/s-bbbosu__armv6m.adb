@@ -43,8 +43,8 @@ package body System.BB.Board_Support is
 
    Sys_Tick_Vector          : constant Vector_Id := 15;
    Interrupt_Request_Vector : constant Vector_Id := 16;
-   --  See vector definitions in ARMv7-M version of System.BB.CPU_Primitives.
-   --  Defined by ARMv7-M specifications.
+   --  See vector definitions in ARMv6-M version of System.BB.CPU_Primitives.
+   --  Defined by ARMv6-M specifications.
 
    Alarm_Time : Time.Timer_Interval;
    pragma Volatile (Alarm_Time);

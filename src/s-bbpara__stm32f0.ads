@@ -36,7 +36,7 @@
 
 --  This package defines basic parameters used by the low level tasking system
 
---  This is the STM32F030 (ARMv6) version of this package
+--  This is the STM32F030 (ARMv6m) version of this package
 
 with Interfaces.STM32.RCC;
 with System.STM32;
